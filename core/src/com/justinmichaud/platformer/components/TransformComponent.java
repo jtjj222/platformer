@@ -6,7 +6,13 @@ import com.badlogic.gdx.math.Vector3;
 
 public class TransformComponent implements Component {
 	public final Vector3 position = new Vector3();
-	public final Vector2 scale = new Vector2(1.0f, 1.0f);
+	public final float width;
+	public final float height;
 	public float rotation = 0.0f;
 	public boolean isHidden = false;
+
+	public TransformComponent(float width, float height) {
+		this.width = width;
+		this.height = height;
+	}
 }

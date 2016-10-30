@@ -8,7 +8,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.justinmichaud.platformer.components.TextureComponent;
 import com.justinmichaud.platformer.components.TransformComponent;
 
@@ -23,7 +23,6 @@ public class RenderingSystem extends SortedIteratingSystem {
     public static final float PIXELS_TO_METRES = 1.0f / PPM;
 
     private static Vector2 meterDimensions = new Vector2();
-    private static Vector2 pixelDimensions = new Vector2();
 
     public static Vector2 getScreenSizeInMeters(){
         meterDimensions.set(Gdx.graphics.getWidth()*PIXELS_TO_METRES,
@@ -31,18 +30,10 @@ public class RenderingSystem extends SortedIteratingSystem {
         return meterDimensions;
     }
 
-    public static Vector2 getScreenSizeInPixesl(){
-        pixelDimensions.set(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        return pixelDimensions;
-    }
-
-    public static float PixelsToMeters(float pixelValue){
-        return pixelValue * PIXELS_TO_METRES;
-    }
-
     private SpriteBatch batch;
-    private Array<Entity> renderQueue;
     private OrthographicCamera cam;
+    private final Box2DDebugRenderer debugRenderer;
+
 
     private ComponentMapper<TextureComponent> textureM;
     private ComponentMapper<TransformComponent> transformM;
@@ -53,53 +44,46 @@ public class RenderingSystem extends SortedIteratingSystem {
         textureM = ComponentMapper.getFor(TextureComponent.class);
         transformM = ComponentMapper.getFor(TransformComponent.class);
 
-        renderQueue = new Array<Entity>();
-
         this.batch = batch;
 
         cam = new OrthographicCamera(FRUSTUM_WIDTH, FRUSTUM_HEIGHT);
-        cam.position.set(FRUSTUM_WIDTH / 2f, FRUSTUM_HEIGHT / 2f, 0);
+        debugRenderer = new Box2DDebugRenderer();
     }
 
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
 
+        cam.zoom = 1f/3;
         cam.update();
+
+        if (getEngine().getSystem(InputSystem.class).isDebug()) {
+            debugRenderer.render(getEngine().getSystem(PhysicsSystem.class).getWorld(),
+                    cam.combined);
+            return;
+        }
+
         batch.setProjectionMatrix(cam.combined);
         batch.enableBlending();
         batch.begin();
 
-        for (Entity entity : renderQueue) {
+        for (Entity entity : getEntities()) {
             TextureComponent tex = textureM.get(entity);
             TransformComponent t = transformM.get(entity);
 
             if (tex.region == null || t.isHidden) {
                 continue;
             }
-
-
-            float width = tex.region.getRegionWidth();
-            float height = tex.region.getRegionHeight();
-
-            float originX = width/2f;
-            float originY = height/2f;
-
             batch.draw(tex.region,
-                    t.position.x - originX, t.position.y - originY,
-                    originX, originY,
-                    width, height,
-                    PixelsToMeters(t.scale.x), PixelsToMeters(t.scale.y),
-                    t.rotation);
+                    t.position.x - t.width/2f, t.position.y - t.height/2f,
+                    t.width, t.height);
         }
-
         batch.end();
-        renderQueue.clear();
     }
 
     @Override
     public void processEntity(Entity entity, float deltaTime) {
-        renderQueue.add(entity);
+
     }
 
     public OrthographicCamera getCamera() {

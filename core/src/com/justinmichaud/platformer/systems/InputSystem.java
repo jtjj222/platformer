@@ -12,10 +12,13 @@ import com.justinmichaud.platformer.components.TransformComponent;
 
 public class InputSystem extends IteratingSystem {
 
-    private static final int AXIS_X = 0, AXIS_Y=1, BUTTON_RUN=3, BUTTON_JUMP=1;
+    private static final int AXIS_X = 0, AXIS_Y=1, BUTTON_RUN=3, BUTTON_JUMP=1,
+            BUTTON_DEBUG=5;
 
     private Controller controller;
     private ComponentMapper<TransformComponent> transform;
+
+    private boolean debug = false;
 
     public InputSystem() {
         super(Family.all(PlayerComponent.class, TransformComponent.class).get());
@@ -49,8 +52,13 @@ public class InputSystem extends IteratingSystem {
 
         boolean run = controller.getButton(BUTTON_RUN);
         boolean jump = controller.getButton(BUTTON_JUMP);
+        debug = controller.getButton(BUTTON_DEBUG);
         transform.get(player).position.add(
                 (int)controller.getAxis(AXIS_X)*(run?2:1),
                 -(int)controller.getAxis(AXIS_Y)*(jump?2:1),0);
+    }
+
+    public boolean isDebug() {
+        return debug;
     }
 }
