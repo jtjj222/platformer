@@ -4,11 +4,15 @@ import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerAdapter;
 import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.justinmichaud.platformer.components.PhysicsComponent;
 import com.justinmichaud.platformer.components.PlayerComponent;
-import com.justinmichaud.platformer.components.TransformComponent;
 
 public class InputSystem extends IteratingSystem {
 
@@ -16,13 +20,15 @@ public class InputSystem extends IteratingSystem {
             BUTTON_DEBUG=5;
 
     private Controller controller;
-    private ComponentMapper<TransformComponent> transform;
+    private ComponentMapper<PhysicsComponent> physics;
 
     private boolean debug = false;
 
+    private float desiredAngle = 0;
+
     public InputSystem() {
-        super(Family.all(PlayerComponent.class, TransformComponent.class).get());
-        transform = ComponentMapper.getFor(TransformComponent.class);
+        super(Family.all(PlayerComponent.class, PhysicsComponent.class).get());
+        physics = ComponentMapper.getFor(PhysicsComponent.class);
     }
 
     @Override
@@ -33,19 +39,22 @@ public class InputSystem extends IteratingSystem {
         controller.addListener(new ControllerAdapter() {
             @Override
             public boolean buttonDown(Controller controller, int buttonCode) {
-                System.out.println("Button down: " + buttonCode);
+                if (Gdx.input.isKeyPressed(Input.Keys.D))
+                    System.out.println("Button down: " + buttonCode);
                 return false;
             }
 
             @Override
             public boolean buttonUp(Controller controller, int buttonCode) {
-                System.out.println("Button up: " + buttonCode);
+                if (Gdx.input.isKeyPressed(Input.Keys.D))
+                    System.out.println("Button up: " + buttonCode);
                 return false;
             }
 
             @Override
             public boolean axisMoved(Controller controller, int axisCode, float value) {
-                System.out.println("Axis moved: " + axisCode + " -> " + value);
+                if (Gdx.input.isKeyPressed(Input.Keys.D))
+                    System.out.println("Axis moved: " + axisCode + " -> " + value);
                 return false;
             }
         });
@@ -53,9 +62,16 @@ public class InputSystem extends IteratingSystem {
         boolean run = controller.getButton(BUTTON_RUN);
         boolean jump = controller.getButton(BUTTON_JUMP);
         debug = controller.getButton(BUTTON_DEBUG);
-        transform.get(player).position.add(
-                (int)controller.getAxis(AXIS_X)*(run?2:1),
-                -(int)controller.getAxis(AXIS_Y)*(jump?2:1),0);
+
+        Body body = physics.get(player).body;
+
+        body.applyLinearImpulse(
+                new Vector2((int)controller.getAxis(AXIS_X)*(run?0.5f:0.1f), 0),
+                body.getLocalCenter(), true);
+        if (jump)
+            body.applyLinearImpulse(new Vector2(0, 0.5f), body.getLocalCenter(), true);
+
+        body.setTransform(body.getPosition(), desiredAngle);
     }
 
     public boolean isDebug() {

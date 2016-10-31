@@ -5,6 +5,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.SortedIteratingSystem;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
@@ -33,6 +34,7 @@ public class RenderingSystem extends SortedIteratingSystem {
     private SpriteBatch batch;
     private OrthographicCamera cam;
     private final Box2DDebugRenderer debugRenderer;
+    private final FPSLogger fpsLogger;
 
 
     private ComponentMapper<TextureComponent> textureM;
@@ -48,11 +50,15 @@ public class RenderingSystem extends SortedIteratingSystem {
 
         cam = new OrthographicCamera(FRUSTUM_WIDTH, FRUSTUM_HEIGHT);
         debugRenderer = new Box2DDebugRenderer();
+        debugRenderer.setDrawVelocities(true);
+        fpsLogger = new FPSLogger();
+        fpsLogger.log();
     }
 
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
+        fpsLogger.log();
 
         cam.zoom = 1f/3;
         cam.update();

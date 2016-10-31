@@ -13,6 +13,7 @@ import com.justinmichaud.platformer.components.PhysicsComponent;
 import com.justinmichaud.platformer.components.PlayerComponent;
 import com.justinmichaud.platformer.components.TextureComponent;
 import com.justinmichaud.platformer.components.TransformComponent;
+import com.justinmichaud.platformer.systems.CameraControlSystem;
 import com.justinmichaud.platformer.systems.InputSystem;
 import com.justinmichaud.platformer.systems.PhysicsSystem;
 import com.justinmichaud.platformer.systems.RenderingSystem;
@@ -26,21 +27,31 @@ public class GameLevelScreen extends ScreenAdapter {
         this.game = game;
         engine = new Engine();
 
+        engine.addSystem(new InputSystem());
+        engine.addSystem(new CameraControlSystem());
         engine.addSystem(new PhysicsSystem());
         engine.addSystem(new RenderingSystem(game.spriteBatch));
-        engine.addSystem(new InputSystem());
 
         buildPlayer();
+        buildGround(0,-4.5f, 20f,0.5f);
+        buildGround(5,-2.5f, 2,1);
     }
 
     private void buildPlayer() {
         Entity e = new Entity();
         e.add(new PlayerComponent());
         e.add(new TransformComponent(1, 1.5f));
+        addPhysicsBox(e, 0, 0, BodyDef.BodyType.DynamicBody);
+        e.getComponent(PhysicsComponent.class).body.setBullet(true);
+        e.getComponent(PhysicsComponent.class).body.setFixedRotation(true);
+        e.add(new TextureComponent(new TextureRegion(game.getOrLoadTexture("badlogic.jpg"))));
+        engine.addEntity(e);
+    }
 
+    private void addPhysicsBox(Entity e, float x, float y, BodyDef.BodyType type) {
         BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(0, 0);
+        bodyDef.type = type;
+        bodyDef.position.set(x,y);
         Body body = engine.getSystem(PhysicsSystem.class).getWorld().createBody(bodyDef);
 
         PolygonShape shape = new PolygonShape();
@@ -50,11 +61,17 @@ public class GameLevelScreen extends ScreenAdapter {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
+        fixtureDef.friction=0.1f;
 
         Fixture fixture = body.createFixture(fixtureDef);
         shape.dispose();
         e.add(new PhysicsComponent(body));
+    }
 
+    private void buildGround(float x, float y, float width, float height) {
+        Entity e = new Entity();
+        e.add(new TransformComponent(width, height));
+        addPhysicsBox(e, x, y, BodyDef.BodyType.StaticBody);
         e.add(new TextureComponent(new TextureRegion(game.getOrLoadTexture("badlogic.jpg"))));
         engine.addEntity(e);
     }
