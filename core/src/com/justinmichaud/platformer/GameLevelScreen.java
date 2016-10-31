@@ -4,9 +4,10 @@ import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.justinmichaud.platformer.components.PhysicsComponent;
@@ -32,25 +33,80 @@ public class GameLevelScreen extends ScreenAdapter {
         engine.addSystem(new PhysicsSystem());
         engine.addSystem(new RenderingSystem(game.spriteBatch));
 
-        buildPlayer();
+        buildPlayer(0,0);
         buildGround(0,-4.5f, 20f,0.5f);
-        buildGround(5,-2.5f, 2,1);
+        buildGround(5,-2.5f, 1,1);
+        buildGround(-5,0, 1,1);
     }
 
-    private void buildPlayer() {
+    private void buildPlayer(int x, int y) {
         Entity e = new Entity();
         e.add(new PlayerComponent());
         e.add(new TransformComponent(1, 1.5f));
-        addPhysicsBox(e, 0, 0, BodyDef.BodyType.DynamicBody);
-        e.getComponent(PhysicsComponent.class).body.setBullet(true);
-        e.getComponent(PhysicsComponent.class).body.setFixedRotation(true);
+
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        bodyDef.position.set(x,y);
+        Body body = engine.getSystem(PhysicsSystem.class).getWorld().createBody(bodyDef);
+
+        float width = e.getComponent(TransformComponent.class).width;
+        float height = e.getComponent(TransformComponent.class).height;
+        float frictionStripHeight = height/10f;
+
+        {
+            PolygonShape shape = new PolygonShape();
+
+            shape.setAsBox(width/2f, (height-frictionStripHeight)/2f,
+                    new Vector2(0, frictionStripHeight/2f), 0);
+
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = 1f;
+            fixtureDef.friction=0;
+
+            body.createFixture(fixtureDef);
+            shape.dispose();
+        }
+        {
+            PolygonShape shape = new PolygonShape();
+
+            shape.setAsBox(width/2f, frictionStripHeight/2f,
+                    new Vector2(0,-(height-frictionStripHeight)/2f), 0);
+
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = 1f;
+            fixtureDef.friction=0.5f;
+
+            body.createFixture(fixtureDef);
+            shape.dispose();
+        }
+        {
+            CircleShape shape = new CircleShape();
+            shape.setRadius(width/2f);
+            shape.setPosition(new Vector2(0,-height/2f));
+
+            FixtureDef fixtureDef = new FixtureDef();
+            fixtureDef.shape = shape;
+            fixtureDef.density = 1f;
+            fixtureDef.isSensor = true;
+            fixtureDef.friction=0.1f;
+
+            body.createFixture(fixtureDef);
+            shape.dispose();
+        }
+
+        body.setBullet(true);
+        body.setFixedRotation(true);
+
+        e.add(new PhysicsComponent(body));
         e.add(new TextureComponent(new TextureRegion(game.getOrLoadTexture("badlogic.jpg"))));
         engine.addEntity(e);
     }
 
-    private void addPhysicsBox(Entity e, float x, float y, BodyDef.BodyType type) {
+    private void addStaticBox(Entity e, float x, float y) {
         BodyDef bodyDef = new BodyDef();
-        bodyDef.type = type;
+        bodyDef.type = BodyDef.BodyType.StaticBody;
         bodyDef.position.set(x,y);
         Body body = engine.getSystem(PhysicsSystem.class).getWorld().createBody(bodyDef);
 
@@ -63,7 +119,7 @@ public class GameLevelScreen extends ScreenAdapter {
         fixtureDef.density = 1f;
         fixtureDef.friction=0.1f;
 
-        Fixture fixture = body.createFixture(fixtureDef);
+        body.createFixture(fixtureDef);
         shape.dispose();
         e.add(new PhysicsComponent(body));
     }
@@ -71,7 +127,7 @@ public class GameLevelScreen extends ScreenAdapter {
     private void buildGround(float x, float y, float width, float height) {
         Entity e = new Entity();
         e.add(new TransformComponent(width, height));
-        addPhysicsBox(e, x, y, BodyDef.BodyType.StaticBody);
+        addStaticBox(e, x, y);
         e.add(new TextureComponent(new TextureRegion(game.getOrLoadTexture("badlogic.jpg"))));
         engine.addEntity(e);
     }

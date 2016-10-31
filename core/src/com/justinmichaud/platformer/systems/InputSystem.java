@@ -33,8 +33,8 @@ public class InputSystem extends IteratingSystem {
 
     @Override
     protected void processEntity(Entity player, float deltaTime) {
-        if (controller == null) controller = Controllers.getControllers().first();
-        if (controller == null) return;
+        if (Controllers.getControllers().size == 0) return;
+        controller = Controllers.getControllers().first();
 
         controller.addListener(new ControllerAdapter() {
             @Override
