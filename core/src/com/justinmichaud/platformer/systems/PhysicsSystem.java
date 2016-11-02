@@ -29,7 +29,7 @@ public class PhysicsSystem extends IteratingSystem {
     public PhysicsSystem() {
         super(Family.all(PhysicsComponent.class, TransformComponent.class).get());
 
-        world = new World(new Vector2(0,-9.8f), true);
+        world = new World(new Vector2(0,0), true);
 
         transform = ComponentMapper.getFor(TransformComponent.class);
         physics = ComponentMapper.getFor(PhysicsComponent.class);

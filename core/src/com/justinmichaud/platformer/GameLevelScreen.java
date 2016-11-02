@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.justinmichaud.platformer.components.PhysicsComponent;
@@ -41,7 +42,6 @@ public class GameLevelScreen extends ScreenAdapter {
 
     private void buildPlayer(int x, int y) {
         Entity e = new Entity();
-        e.add(new PlayerComponent());
         e.add(new TransformComponent(1, 1.5f));
 
         BodyDef bodyDef = new BodyDef();
@@ -52,6 +52,8 @@ public class GameLevelScreen extends ScreenAdapter {
         float width = e.getComponent(TransformComponent.class).width;
         float height = e.getComponent(TransformComponent.class).height;
         float frictionStripHeight = height/10f;
+
+        Fixture groundSensor, frictionFixture;
 
         {
             PolygonShape shape = new PolygonShape();
@@ -78,7 +80,7 @@ public class GameLevelScreen extends ScreenAdapter {
             fixtureDef.density = 1f;
             fixtureDef.friction=0.5f;
 
-            body.createFixture(fixtureDef);
+            frictionFixture = body.createFixture(fixtureDef);
             shape.dispose();
         }
         {
@@ -92,7 +94,7 @@ public class GameLevelScreen extends ScreenAdapter {
             fixtureDef.isSensor = true;
             fixtureDef.friction=0.1f;
 
-            body.createFixture(fixtureDef);
+            groundSensor = body.createFixture(fixtureDef);
             shape.dispose();
         }
 
@@ -100,6 +102,7 @@ public class GameLevelScreen extends ScreenAdapter {
         body.setFixedRotation(true);
 
         e.add(new PhysicsComponent(body));
+        e.add(new PlayerComponent(groundSensor, frictionFixture));
         e.add(new TextureComponent(new TextureRegion(game.getOrLoadTexture("badlogic.jpg"))));
         engine.addEntity(e);
     }
