@@ -37,6 +37,7 @@ public class GameLevelScreen extends ScreenAdapter {
         buildPlayer(0,0);
         buildGround(0,-4.5f, 20f,0.5f);
         buildGround(5,-2.5f, 1,1);
+        buildGround(-3,-1.5f, 1,1);
         buildGround(-5,0, 1,1);
     }
 
@@ -65,6 +66,7 @@ public class GameLevelScreen extends ScreenAdapter {
             fixtureDef.shape = shape;
             fixtureDef.density = 1f;
             fixtureDef.friction=0;
+            fixtureDef.restitution = 0;
 
             body.createFixture(fixtureDef);
             shape.dispose();
@@ -79,6 +81,7 @@ public class GameLevelScreen extends ScreenAdapter {
             fixtureDef.shape = shape;
             fixtureDef.density = 1f;
             fixtureDef.friction=0.5f;
+            fixtureDef.restitution = 0;
 
             frictionFixture = body.createFixture(fixtureDef);
             shape.dispose();
@@ -86,13 +89,14 @@ public class GameLevelScreen extends ScreenAdapter {
         {
             CircleShape shape = new CircleShape();
             shape.setRadius(width/2f);
-            shape.setPosition(new Vector2(0,-height/2f));
+            shape.setPosition(new Vector2(0,-height/2.5f));
 
             FixtureDef fixtureDef = new FixtureDef();
             fixtureDef.shape = shape;
             fixtureDef.density = 1f;
             fixtureDef.isSensor = true;
             fixtureDef.friction=0.1f;
+            fixtureDef.restitution = 0;
 
             groundSensor = body.createFixture(fixtureDef);
             shape.dispose();
@@ -121,6 +125,7 @@ public class GameLevelScreen extends ScreenAdapter {
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
         fixtureDef.friction=0.1f;
+        fixtureDef.restitution = 0;
 
         body.createFixture(fixtureDef);
         shape.dispose();

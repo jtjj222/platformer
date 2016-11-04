@@ -9,7 +9,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerAdapter;
 import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
@@ -22,15 +21,14 @@ public class InputSystem extends IteratingSystem {
     private static final int AXIS_X = 0, AXIS_Y=1, BUTTON_RUN=3, BUTTON_JUMP=1,
             BUTTON_DEBUG=5;
 
-    final static float MAX_VELOCITY = 7f;
-
     private final ComponentMapper<PhysicsComponent> physics;
     private final ComponentMapper<PlayerComponent> playerComponent;
 
     private boolean debug = false;
     private float desiredAngle = 0;
 
-    private long jumpStarted = 0;
+    private float jumpBoostFrames = -1;
+    private boolean allowJumping = true;
 
     private final ControllerAdapter debugAdapter = new ControllerAdapter() {
         @Override
@@ -69,7 +67,6 @@ public class InputSystem extends IteratingSystem {
         if (Gdx.input.isKeyPressed(Input.Keys.D)) controller.addListener(debugAdapter);
         else controller.removeListener(debugAdapter);
 
-        boolean run = controller.getButton(BUTTON_RUN);
         boolean jump = controller.getButton(BUTTON_JUMP);
         debug = controller.getButton(BUTTON_DEBUG);
 
@@ -77,39 +74,46 @@ public class InputSystem extends IteratingSystem {
         PlayerComponent fixtures = playerComponent.get(player);
 
         boolean onGround = isPlayerGrounded(body, fixtures.groundSensor);
-        if (onGround && jumpStarted == 0) {
-            jumpStarted = System.nanoTime();
-        }
-        if (!onGround) {
-            if (System.nanoTime() - jumpStarted < 0.5f * 1E9)
-                onGround = true;
-            else
-                jumpStarted = 0;
-        }
+        float maxJumpFrames = 12*0.016f;
 
-        // Max x velocity clamp
-        if(Math.abs(body.getLinearVelocity().x) > MAX_VELOCITY) {
-            body.setLinearVelocity(Math.signum(body.getLinearVelocity().x) * MAX_VELOCITY,
-                    body.getLinearVelocity().y);
-        }
+        // Allow them to jump again once they return to the ground and stop pressing jump
+        if (!jump && onGround && jumpBoostFrames < 0) allowJumping = true;
 
-        // Apply forces
-        if ((int) controller.getAxis(AXIS_X) < 0 && body.getLinearVelocity().x > -MAX_VELOCITY) {
-            body.applyLinearImpulse(-2f*(run?1.5f:1f), 0,
+        if (jump && allowJumping && onGround && jumpBoostFrames < 0) {
+            // Start new jump
+            body.applyLinearImpulse(0, 10,
                     body.getLocalCenter().x, body.getLocalCenter().y, true);
+            jumpBoostFrames = 0;
+            allowJumping = false;
         }
-        else if ((int) controller.getAxis(AXIS_X) > 0 && body.getLinearVelocity().x < MAX_VELOCITY) {
-            body.applyLinearImpulse(2f*(run?1.5f:1f), 0,
+        else if (jumpBoostFrames > 0 && jumpBoostFrames < maxJumpFrames && !allowJumping) {
+            // Boost existing jump
+            if (jump) body.applyLinearImpulse(0, 10 * (1-jumpBoostFrames/maxJumpFrames),
+                    body.getLocalCenter().x, body.getLocalCenter().y, true);
+            // Otherwise, they are done being boosted
+            else jumpBoostFrames = -1;
+        }
+        if (jumpBoostFrames >= 0) jumpBoostFrames += deltaTime;
+        if (jumpBoostFrames > maxJumpFrames) jumpBoostFrames = -1;
+
+        float maxVelocity = 7f * (controller.getButton(BUTTON_RUN)? 1.5f : 1);
+        float impulseX = (controller.getButton(BUTTON_RUN)? 1f : 0.75f)
+                * (onGround? 1 : 1.5f);
+
+        int xInput = (int) controller.getAxis(AXIS_X);
+        float xVel = body.getLinearVelocity().x;
+        if (xInput != 0 && Math.signum(xInput) != Math.signum(xVel)) {
+            impulseX *= 2; // Make turning around happen faster
+        }
+
+        // Apply forces to move player
+        if (xInput != 0 && Math.signum(xInput)*body.getLinearVelocity().x < maxVelocity) {
+            body.applyLinearImpulse(Math.signum(xInput)*impulseX, 0,
                     body.getLocalCenter().x, body.getLocalCenter().y, true);
         }
         else {
             // Dampen motion
-            body.setLinearVelocity(body.getLinearVelocity().scl(0.9f));
-        }
-
-        if (jump && onGround) {
-            body.applyLinearImpulse(0, 10,
-                    body.getLocalCenter().x, body.getLocalCenter().y, true);
+            body.setLinearVelocity(body.getLinearVelocity().scl(0.9f, 1));
         }
 
         // Gravity

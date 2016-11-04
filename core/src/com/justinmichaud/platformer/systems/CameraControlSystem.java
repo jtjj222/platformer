@@ -23,6 +23,6 @@ public class CameraControlSystem extends IteratingSystem {
         camera.position.set(transform.get(player).position);
         camera.position.y += RenderingSystem.getScreenSizeInMeters().y/2f*camera.zoom;
         camera.position.y -= transform.get(player).height/2f;
-        camera.position.y -= 1;
+        camera.position.y -= (RenderingSystem.getScreenSizeInMeters().y*camera.zoom)/5f;
     }
 }
