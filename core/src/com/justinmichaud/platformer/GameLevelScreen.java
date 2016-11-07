@@ -80,7 +80,7 @@ public class GameLevelScreen extends ScreenAdapter {
             FixtureDef fixtureDef = new FixtureDef();
             fixtureDef.shape = shape;
             fixtureDef.density = 1f;
-            fixtureDef.friction=0.5f;
+            fixtureDef.friction=0;
             fixtureDef.restitution = 0;
 
             frictionFixture = body.createFixture(fixtureDef);
@@ -95,7 +95,7 @@ public class GameLevelScreen extends ScreenAdapter {
             fixtureDef.shape = shape;
             fixtureDef.density = 1f;
             fixtureDef.isSensor = true;
-            fixtureDef.friction=0.1f;
+            fixtureDef.friction=0;
             fixtureDef.restitution = 0;
 
             groundSensor = body.createFixture(fixtureDef);
@@ -124,7 +124,7 @@ public class GameLevelScreen extends ScreenAdapter {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 1f;
-        fixtureDef.friction=0.1f;
+        fixtureDef.friction=0;
         fixtureDef.restitution = 0;
 
         body.createFixture(fixtureDef);

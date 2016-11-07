@@ -77,7 +77,7 @@ public class InputSystem extends IteratingSystem {
         float maxJumpFrames = 12*0.016f;
 
         // Allow them to jump again once they return to the ground and stop pressing jump
-        if (!jump && onGround && jumpBoostFrames < 0) allowJumping = true;
+        if (!jump && jumpBoostFrames < 0) allowJumping = true;
 
         if (jump && allowJumping && onGround && jumpBoostFrames < 0) {
             // Start new jump
@@ -97,8 +97,8 @@ public class InputSystem extends IteratingSystem {
         if (jumpBoostFrames > maxJumpFrames) jumpBoostFrames = -1;
 
         float maxVelocity = 7f * (controller.getButton(BUTTON_RUN)? 1.5f : 1);
-        float impulseX = (controller.getButton(BUTTON_RUN)? 1f : 0.75f)
-                * (onGround? 1 : 1.5f);
+        float impulseX = (controller.getButton(BUTTON_RUN)? 0.45f : 0.25f)
+                * (onGround? 1 : 1.25f);
 
         int xInput = (int) controller.getAxis(AXIS_X);
         float xVel = body.getLinearVelocity().x;
@@ -113,7 +113,7 @@ public class InputSystem extends IteratingSystem {
         }
         else {
             // Dampen motion
-            body.setLinearVelocity(body.getLinearVelocity().scl(0.9f, 1));
+            body.setLinearVelocity(body.getLinearVelocity().scl((onGround? 0.92f : 0.98f), 1));
         }
 
         // Gravity
